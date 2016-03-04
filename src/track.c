@@ -408,9 +408,6 @@ typedef struct cmd {
   unsigned int done;
   unsigned int match_type;
   match* match;
-  //Did we find the cmd we were looking for?
-  unsigned int target_reached;
-  char pad[4];
 } cmd;
 
 cmd* mk_cmd(char* name, cmd* next);
@@ -421,7 +418,6 @@ cmd* mk_cmd(char* name, cmd* next) {
   c->done = 0;
   c->match_type = 0;
   c->match = NULL;
-  c->target_reached = 0;
   return c;
 }
 
@@ -474,6 +470,7 @@ int find_loop(char* command) {
       break;
     }
     char* next_name = NULL;
+    char* end_name=NULL;
     type_match* tm = m->type_match;
     path_match* pm = m->path_match;
     file_match* fm = m->file_match;
@@ -491,6 +488,7 @@ int find_loop(char* command) {
         //Builtin, end
         printf("'%s' is built into shell '%s'\n", current->name, bm->shell);
         next_name = NULL;
+        end_name = current->name;
       }
     } else if (pm != NULL) {
       //Command found in path
@@ -515,13 +513,12 @@ int find_loop(char* command) {
         printf("'%s' has canonical pathname '%s'\n", current->name, rm->full_name);
       }
       next_name = NULL;
-    }
-    if (next_name == NULL) {
-      current->target_reached=1;
+      end_name = rm->full_name;
     }
     current->done=1;
-    if (current->target_reached) {
-      printf("target reached\n");
+    if (end_name != NULL) {
+      printf("%s\n", end_name);
+      //printf("target reached\n");
       assert(current->next == NULL);
       exit_status=EXIT_SUCCESS ;
       break;
